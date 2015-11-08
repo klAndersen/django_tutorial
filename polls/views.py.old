@@ -1,0 +1,142 @@
+# Re-named to .old because this has been changed to generic in Tutorial 4.
+# See: https://docs.djangoproject.com/en/1.8/intro/tutorial04/#amend-views
+
+"""
+Taken from: https://docs.djangoproject.com/en/1.8/intro/tutorial03/#write-views-that-actually-do-something
+
+Each view is responsible for doing one of two things: returning an 'HttpResponse' object containing the
+content for the requested page, or raising an exception such as 'Http404'. The rest is up to you.
+
+Your view can read records from a database, or not. It can use a template system such as Django's - or a third-party
+Python template system - or not. It can generate a PDF file, output XML, create a ZIP file on the fly, anything you
+want, using whatever Python libraries you want.
+
+All Django wants is that HttpResponse. Or an exception.
+
+------------------------------------------------------------------------------------------------------------
+
+Philosophy: Http404
+
+Taken from: https://docs.djangoproject.com/en/1.8/intro/tutorial03/#a-shortcut-get-object-or-404
+
+Why do we use a helper function get_object_or_404() instead of automatically catching the ObjectDoesNotExist exceptions
+at a higher level, or having the model API raise Http404 instead of ObjectDoesNotExist?
+
+Because that would couple the model layer to the view layer. One of the foremost design goals of Django is to maintain
+loose coupling. Some controlled coupling is introduced in the django.shortcuts module.
+"""
+
+from django.http import HttpResponseRedirect, HttpResponse
+from django.core.urlresolvers import reverse
+
+from django.shortcuts import get_object_or_404, render
+# removed in detail:v3.0 and replaced by the above
+# from django.http import Http404
+
+# removed in index: v4.0 and replaced by the above
+# from django.template import RequestContext, loader
+
+from .models import Choice, Question
+
+# This function loads the template called polls/index.html and passes it a context.
+# The context is a dictionary mapping template variable names to Python objects.
+# Load the page by pointing your browser at "/polls/", and you should see a bulleted-list
+# containing the "What's up" question from Tutorial 1. The link points to the question's detail page.
+
+
+def index(request):
+    # v1.0: Simple return at index page of /polls
+    # return HttpResponse("Hello, world. You're at the polls index.")
+
+    # v2.0: displays the latest 5 poll questions in the system, separated by commas, according to publication date:
+    # latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    # output = ', '.join([p.question_text for p in latest_question_list])
+    # return HttpResponse(output)
+
+    # v3.0: Use template found in ./templates/polls/
+    # latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    # template = loader.get_template('polls/index.html')
+    # context = RequestContext(request, {
+    #     'latest_question_list': latest_question_list,
+    # })
+    # return HttpResponse(template.render(context))
+
+    # v4.0: Use render() on the template
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {'latest_question_list': latest_question_list}
+    # The render() function takes the request object as its first argument,
+    # a template name as its second argument and a dictionary as its optional third argument.
+    # It returns an HttpResponse object of the given template rendered with the given context.
+    return render(request, 'polls/index.html', context)
+
+
+# Call to this function can be seen like this:
+# detail(request=<HttpRequest object>, question_id='34')
+def detail(request, question_id):
+    # v1.0: Simple text return
+    # return HttpResponse("You're looking at question %s." % question_id)
+
+    # v2.0:
+    # Raise Http404 exception if Question with given ID doesn't exist.
+    # See 'details.html' in ./templates/polls/
+    # try:
+    #     question = Question.objects.get(pk=question_id)
+    # except Question.DoesNotExist:
+    #     raise Http404("Question does not exist")
+    # return render(request, 'polls/detail.html', {'question': question})
+
+    # v3.0: Added get() and raise Http404
+    # The get_object_or_404() function takes a Django model as its first argument
+    # and an arbitrary number of keyword arguments, which it passes to the get()
+    # function of the model's manager. It raises Http404 if the object doesn't exist.
+    # @SEE Philosophy: Http404
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/detail.html', {'question': question})
+
+
+def results(request, question_id):
+    # v1.0: Initialization
+    # response = "You're looking at the results of question %s."
+    # return HttpResponse(response % question_id)
+
+    # v2.0: List results of voting
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/results.html', {'question': question})
+
+def vote(request, question_id):
+    # v1.0: Initialization
+    # return HttpResponse("You're voting on question %s." % question_id)
+
+    # v2.0: Voting functionality
+    p = get_object_or_404(Question, pk=question_id)
+    try:
+        # request.POST is a dictionary-like object that lets you access submitted data by key name.
+        # In this case, request.POST['choice'] returns the ID of the selected choice, as a string.
+        # request.POST values are always strings.
+        selected_choice = p.choice_set.get(pk=request.POST['choice'])
+    # request.POST['choice'] will raise KeyError if choice wasn't provided in POST data.
+    # The above code checks for KeyError and re-displays the question form with an error
+    # message if choice isn't given.
+    except (KeyError, Choice.DoesNotExist):
+        # Redisplay the question voting form.
+        return render(request, 'polls/detail.html', {
+            'question': p,
+            'error_message': "You didn't select a choice.",
+        })
+    else:
+        # After incrementing the choice count, the code returns an HttpResponseRedirect rather
+        # than a normal HttpResponse. HttpResponseRedirect takes a single argument: the URL to
+        # which the user will be redirected.
+        selected_choice.votes += 1
+        selected_choice.save()
+        # Always return an HttpResponseRedirect after successfully dealing
+        # with POST data. This prevents data from being posted twice if a
+        # user hits the Back button.
+
+        # We are using the reverse() function in the HttpResponseRedirect constructor in this example.
+        # This function helps avoid having to hardcode a URL in the view function. It is given the name
+        # of the view that we want to pass control to and the variable portion of the URL pattern that
+        # points to that view. In this case, using the URLconf we set up in Tutorial 3, this reverse()
+        # call will return a string like '/polls/3/results/' where the 3 is the value of p.id.
+        # This redirected URL will then call the 'results' view to display the final page.
+        return HttpResponseRedirect(reverse('polls:results', args=(p.id,)))

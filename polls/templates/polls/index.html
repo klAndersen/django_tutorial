@@ -1,0 +1,19 @@
+{% comment %}
+    See: https://docs.djangoproject.com/en/1.8/intro/tutorial06/#customize-your-app-s-look-and-feel
+    {% load staticfiles %} loads the {% static %} template tag from the staticfiles template library.
+    The {% static %} template tag generates the absolute URL of the static file.
+{% endcomment %}
+
+{% load staticfiles %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}" />
+
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}

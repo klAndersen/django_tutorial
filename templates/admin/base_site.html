@@ -1,0 +1,29 @@
+<!--
+This file is based on the template found in:
+    ~/PycharmProjects/pycharm/lib/python2.7/site-packages/django/contrib/admin/templates/
+-->
+
+{% extends "admin/base.html" %}
+
+<!-- The default title of this site (here: admin-page, title: 'Django site admin') -->
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+<!--
+Here you add your own site name (below is the original template code).
+
+<h1 id="site-name">
+<a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a>
+</h1>
+
+Notes:
+
+{% and {{ tags are part of Django’s template language.
+When Django renders admin/base_site.html, this template language will be evaluated to produce the final HTML page.
+To override a template, just copy it from the default directory to the project directory and add your changes.
+
+-->
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">Polls Administration</a></h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

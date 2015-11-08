@@ -1,0 +1,9 @@
+ /* See: https://docs.djangoproject.com/en/1.8/intro/tutorial06 */
+
+li a {
+    color: green;
+}
+
+body {
+    background: white url("images/background.gif") no-repeat right bottom;
+}
